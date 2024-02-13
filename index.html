@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="server.js">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="box">
+            <span id="custom-date" class="custom-date"></span>
+            <h2>Temperature Monitor</h2>
+            <canvas id="temperatureChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const customDateElement = document.getElementById('custom-date');
+            const temperatureChartCanvas = document.getElementById('temperatureChart').getContext('2d');
+
+            function updateCustomDate() {
+                const currentDate = new Date();
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                const formattedDate = currentDate.toLocaleDateString('en-US', options);
+                customDateElement.textContent = formattedDate;
+            }
+
+            function updateTemperatureChart(data) {
+                const timeLabels = data.map(entry => entry.time);
+                const localTemperatureData = data.map(entry => entry.localTemperature);
+                const batteryTemperatureData = data.map(entry => entry.batteryTemperature);
+
+                const chartData = {
+                    labels: timeLabels,
+                    datasets: [
+                        {
+                            label: 'Local Temperature (°C)',
+                            borderColor: 'rgb(75, 192, 192)',
+                            data: localTemperatureData,
+                        },
+                        {
+                            label: 'Battery Temperature (°C)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            data: batteryTemperatureData,
+                        },
+                    ]
+                };
+
+                const options = {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        }
+                    }
+                };
+
+                const temperatureChart = new Chart(temperatureChartCanvas, {
+                    type: 'line',
+                    data: chartData,
+                    options: options
+                });
+            }
+
+            function fetchData() {
+                fetch('/api/temperature')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateTemperatureChart(data);
+                    });
+            }
+
+            updateCustomDate();
+            fetchData();
+            setInterval(() => {
+                fetchData();
+                updateCustomDate();
+            }, 5000); // Update every 5 seconds
+        });
+    </script>
+</body>
+</html>
